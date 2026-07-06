@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Story Engine</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #fdf6e3; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .form-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; position: relative; }
+        h1 { color: #6b3e26; text-align: center; }
+        label { display: block; margin-top: 16px; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; margin-top: 24px; padding: 12px; background: #f08a5d; color: white; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; }
+        button:hover { background: #e07b4f; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .hint { font-size: 0.8em; color: #999; margin-top: 4px; }
+        .error-hint { font-size: 0.8em; color: #d9534f; margin-top: 4px; display: none; }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(253, 246, 227, 0.95);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .loading-overlay.active { display: flex; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f0d9b5;
+            border-top: 5px solid #f08a5d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            font-size: 1.1em;
+            color: #6b3e26;
+            font-weight: bold;
+            text-align: center;
+        }
+        .loading-subtext {
+            font-size: 0.9em;
+            color: #a08a6e;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-box">
+        <h1>📖 Story Engine</h1>
+        <form id="storyForm" action="/generate" method="POST">
+            <label>Title / Story Theme</label>
+            <input type="text" name="judul" placeholder="Adventure in the Magic Forest" required>
+
+            <label>Moral / Lesson</label>
+            <input type="text" name="pesan_moral" placeholder="Never give up" required>
+
+            <label>Story Language (main display)</label>
+            <select name="bahasa_cerita" id="langCerita" onchange="validateLangs()">
+                {% for code, name in languages.items() %}
+                <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Translation Practice Language</label>
+            <select name="bahasa_latihan" id="langLatihan" onchange="validateLangs()">
+                {% for code, name in languages.items() %}
+                <option value="{{ code }}" {% if code == 'es' %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            <div class="error-hint" id="langError">Please choose two different languages.</div>
+
+            <label>Number of Pages (1-10)</label>
+            <input type="number" name="jumlah_halaman" id="jumlahHalaman" min="1" max="10" value="3" required oninput="updateEstimate()">
+            <div class="hint" id="estimateText">Estimated time: 30–40 seconds</div>
+
+            <button type="submit" id="submitBtn">Create Story ✨</button>
+        </form>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Creating your story...</div>
+        <div class="loading-subtext" id="loadingEstimate">Usually takes 30–40 seconds, please wait</div>
+    </div>
+
+    <script>
+        function getEstimate(pages) {
+            const minTime = 20 + (pages * 8);
+            const maxTime = 30 + (pages * 10);
+            return `${minTime}–${maxTime} seconds`;
+        }
+
+        function updateEstimate() {
+            const pages = parseInt(document.getElementById('jumlahHalaman').value) || 1;
+            const est = getEstimate(pages);
+            document.getElementById('estimateText').innerText = `Estimated time: ${est}`;
+            document.getElementById('loadingEstimate').innerText = `Usually takes ${est}, please wait`;
+        }
+
+        function validateLangs() {
+            const l1 = document.getElementById('langCerita').value;
+            const l2 = document.getElementById('langLatihan').value;
+            const errorEl = document.getElementById('langError');
+            const submitBtn = document.getElementById('submitBtn');
+            if (l1 === l2) {
+                errorEl.style.display = 'block';
+                submitBtn.disabled = true;
+            } else {
+                errorEl.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        updateEstimate();
+        validateLangs();
+
+        document.getElementById('storyForm').addEventListener('submit', function() {
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').innerText = 'Processing...';
+            document.getElementById('loadingOverlay').classList.add('active');
+        });
+    </script>
+</body>
+</html>

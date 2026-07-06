@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title id="pageTitle">{{ story.title_lang1 }}</title>
+    <style>
+        body { font-family: Georgia, serif; background: #fdf6e3; margin: 0; padding: 20px; color: #333; }
+        .toolbar {
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .toolbar button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+        .btn-lang {
+            background: #eee;
+            color: #555;
+        }
+        .btn-lang.active {
+            background: #f08a5d;
+            color: white;
+        }
+        .btn-print {
+            background: #6b3e26;
+            color: white;
+        }
+        .info-bar {
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .info-bar label {
+            font-weight: bold;
+            color: #555;
+            margin-right: 8px;
+        }
+        .info-bar .field-line {
+            display: inline-block;
+            min-width: 220px;
+            border-bottom: 1px solid #999;
+            height: 20px;
+        }
+        .cover { text-align: center; background: linear-gradient(135deg, #ffecd2, #fcb69f); padding: 40px 20px; border-radius: 16px; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .cover h1 { font-size: 2em; color: #6b3e26; }
+        .cover p { font-style: italic; color: #7a5c47; }
+        .page { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .page-number { font-weight: bold; color: #f08a5d; font-family: Arial; font-size: 0.9em; }
+        .story-text { font-size: 1.1em; line-height: 1.6; }
+        .translate-label {
+            font-family: Arial, sans-serif;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #999;
+            margin-top: 16px;
+            margin-bottom: 6px;
+        }
+        .translate-box {
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 1em;
+            resize: vertical;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent 27px,
+                #ddd 28px
+            );
+            line-height: 28px;
+        }
+        .score-bar {
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+        }
+        .score-bar label {
+            font-weight: bold;
+            color: #555;
+        }
+        .score-bar .field-line {
+            display: inline-block;
+            min-width: 120px;
+            border-bottom: 1px solid #999;
+            height: 24px;
+        }
+        .back-link { display: block; text-align: center; margin-top: 20px; font-family: Arial, sans-serif; }
+
+        @media print {
+            .toolbar, .back-link { display: none; }
+            .page, .cover, .info-bar, .score-bar {
+                page-break-inside: avoid;
+            }
+            .translate-box {
+                border: 1px solid #999;
+            }
+        }
+
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button class="btn-lang" id="btnLang1" onclick="switchLang('lang1')">{{ lang1_name }}</button>
+        <button class="btn-lang" id="btnLang2" onclick="switchLang('lang2')">{{ lang2_name }}</button>
+        <button class="btn-print" onclick="window.print()">🖨️ Print</button>
+    </div>
+
+    <div class="info-bar">
+        <label>Name:</label>
+        <span class="field-line"></span>
+    </div>
+
+    <div class="cover">
+        <h1 id="coverTitle">{{ story.title_lang1 }}</h1>
+        <p id="coverDesc">{{ story.cover_description_lang1 }}</p>
+    </div>
+
+    {% for p in story.pages %}
+    <div class="page">
+        <div class="page-number">Page {{ p.page }}</div>
+        <p class="story-text"
+           data-lang1="{{ p.story_lang1 | e }}"
+           data-lang2="{{ p.story_lang2 | e }}"
+           id="story-{{ p.page }}">
+        </p>
+        <div class="translate-label" id="translateLabel-{{ p.page }}"></div>
+        <textarea class="translate-box" rows="4" placeholder=""></textarea>
+    </div>
+    {% endfor %}
+
+    <div class="score-bar">
+        <label>Score:</label>
+        <span class="field-line"></span>
+    </div>
+
+    <a class="back-link" href="/">← Create another story</a>
+
+    <script>
+        const titleLang1 = {{ story.title_lang1 | tojson }};
+        const titleLang2 = {{ story.title_lang2 | tojson }};
+        const descLang1 = {{ story.cover_description_lang1 | tojson }};
+        const descLang2 = {{ story.cover_description_lang2 | tojson }};
+        const lang1Name = {{ lang1_name | tojson }};
+        const lang2Name = {{ lang2_name | tojson }};
+
+        function switchLang(which) {
+            const isLang1 = which === 'lang1';
+            const displayName = isLang1 ? lang1Name : lang2Name;
+            const practiceName = isLang1 ? lang2Name : lang1Name;
+
+            document.getElementById('coverTitle').innerText = isLang1 ? titleLang1 : titleLang2;
+            document.getElementById('coverDesc').innerText = isLang1 ? descLang1 : descLang2;
+            document.getElementById('pageTitle').innerText = isLang1 ? titleLang1 : titleLang2;
+
+            document.querySelectorAll('.story-text').forEach(function(el) {
+                el.innerText = isLang1 ? el.getAttribute('data-lang1') : el.getAttribute('data-lang2');
+            });
+
+            document.querySelectorAll('[id^="translateLabel-"]').forEach(function(el) {
+                el.innerText = `Write your translation in ${practiceName} below:`;
+            });
+
+            document.getElementById('btnLang1').classList.toggle('active', isLang1);
+            document.getElementById('btnLang2').classList.toggle('active', !isLang1);
+        }
+
+        switchLang('lang1');
+    </script>
+</body>
+</html>
